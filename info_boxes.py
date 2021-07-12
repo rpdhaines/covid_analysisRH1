@@ -1,7 +1,7 @@
 # info box file containing the markdown strings for the hover info boxes
 
 tab0_info = """
-### This dashboard has been created in plotly dash by Richard Haines.  
+### This dashboard has been created in Plotly Dash by Richard Haines.  
 Last updated: July 2021  
 ### About the author  
 I am a mathematician with a love for data science and analytics. Having spent much of my career as an actuary, I have
@@ -14,8 +14,6 @@ COVID data.
 There are 3 tabs looking at relationships between vaccination coverage, cases and hospital admissions. Analysis can 
 be filtered by age groups, regions and time period. And there are a few other parameters to play with.  
 Explore the tabs and see what you can discover. Have fun!  
-  
-    
 """
 
 box1_1 = """

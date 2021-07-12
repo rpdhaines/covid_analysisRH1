@@ -372,7 +372,7 @@ tab3_layout = html.Div([
 
 
     dcc.Markdown("""
-    #### Explore lag between cases and admissions.As well as varying the date range and lag length, different age group combinations can be selected
+    #### Explore lag between cases and admissions. As well as varying the date range and lag length, different age group combinations can be selected.
     """, style=create_div_style(borderb='black solid 1px')),
 
     # create div box for all options

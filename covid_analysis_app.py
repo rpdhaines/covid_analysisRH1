@@ -54,7 +54,7 @@ app.layout = html.Div([
      [https://api.coronavirus.data.gov.uk/v2/data?areaType=region&metric=newCasesBySpecimenDateAgeDemographics&format=csv]  
     The ONS 2019 population estimates available from [https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatesforukenglandandwalesscotlandandnorthernireland]  
     The code for this app can be found on GitHub: [https://github.com/rpdhaines/covid_analysisRH1]  
-    Questions? contact me on rpdhaines2@yahoo.co.uk 
+    Questions? Contact me on rpdhaines2@yahoo.co.uk 
     ''')
     ], style=create_div_style(fs=16))
 ])
