@@ -28,16 +28,17 @@ app.layout = html.Div([
     html.Div([
         # heading and blurb
         dcc.Markdown('''
-        ## Analysis of England COVID data        
-        
-        ''', style=create_div_style(mb=3, borderb='solid grey 1px',  bc='rgba(52, 184, 220, 0.3)',
-                                    gradient='linear-gradient(to right, #34B8DC, #FFFFFF)')),
+        ### Analysis of England COVID data  
+        ##### Richard Haines       
+        ''', style=create_div_style(mb=0, mt=0, borderb='solid grey 1px',  bc='rgba(52, 184, 220, 0.3)',
+                                    gradient='linear-gradient(to right, #008080, #FFFFFF)')),
 
     ]),
 
     html.Div([
 
-        dcc.Tabs(id='tabs', value='tab-1', children=[
+        dcc.Tabs(id='tabs', value='tab-0', children=[
+            dcc.Tab(label='Information', value='tab-0'),
             dcc.Tab(label='Case analysis by age and region', value='tab-1'),
             dcc.Tab(label='Impact of vaccinations on hospital admissions', value='tab-2'),
             dcc.Tab(label='Analysis of case to admission lag', value='tab-3'),
@@ -55,14 +56,16 @@ app.layout = html.Div([
     The code for this app can be found on GitHub: [https://github.com/rpdhaines/covid_analysisRH1]  
     Questions? contact me on rpdhaines2@yahoo.co.uk 
     ''')
-    ], style=create_div_style())
+    ], style=create_div_style(fs=16))
 ])
 
 # set callback to choose tab
 @app.callback(Output('tabs-content', 'children'),
               Input('tabs', 'value'))
 def render_content(tab):
-    if tab == 'tab-1':
+    if tab == 'tab-0':
+        return tab0_layout
+    elif tab == 'tab-1':
         return tab1_layout
     elif tab == 'tab-2':
         return tab2_layout
@@ -133,7 +136,7 @@ def update_graph1_1(Region, start_date, rolling_avge_length, age_bins_list1,
 
     return fig1_1
 
-# set callback to populate graph2
+# set callback to populate graph1_2
 @app.callback(
     Output('daily_growth_rate_by_age_group', 'figure'),
     [Input('Region', 'value'),
@@ -248,7 +251,7 @@ def update_graph2_2(start_date, rolling_avge_length, offset_days, age_gps):
     df1 = admissions_per_10k.copy()
     df2 = cases_per_10k.copy()
 
-    df1 = df1.shift(offset_days)
+    df1 = df1.shift(-offset_days)
 
     # turn start_date to datetime
     start_date = pd.to_datetime(dates[start_date])

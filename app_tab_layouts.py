@@ -57,17 +57,20 @@ groups_and_cases = ['date', 'age_group', 'areaName', 'cases']
 national_groupings = ['date', 'age_group']
 national_groups_and_cases = ['date', 'age_group', 'cases']
 
+tab0_layout = html.Div([
+    dcc.Markdown(tab0_info)
+], style=create_div_style(fs=16, ml=8, borderb='black solid 1px', bordert='black solid 1px'))
+
 tab1_layout = html.Div([
 
             dcc.Markdown("""
-            #### The first figure shows cases per 10,000 of population and the second shows the average daily growth rate smoothed according to the selected parameters.        
-            #### As well as varying Region and age groups, you can play with some smoothing parameters described below.
+            #### Exploration of case levels and case growth. As well as varying region and age groups, you can play with some smoothing parameters as described below.
             """, style=create_div_style(borderb='black solid 1px')),
 
             # create div box for all options
             html.Div([
                 # label for dropdown
-                html.Label('Choose Region',
+                html.Label('Choose region',
                            style=create_div_style(fs=18, mr=10)),
 
                 # dropdown for choosing Region
@@ -75,7 +78,7 @@ tab1_layout = html.Div([
                     id='Region',
                     options=[{'label': i, 'value': i} for i in region_names],
                     value='England',
-                    style=create_div_style(mb=5, mr=10, w='90%')
+                    style=create_div_style(mb=5, mr=10, w='90%', fs=16)
                 ),
 
                 # first create a div box for it as it seems to be the only way to set margins for it
@@ -103,7 +106,7 @@ tab1_layout = html.Div([
 
                 html.Div([
                     # label for slider
-                    html.Label('Set size of rolling average window for cases (must be multiple of 7)',
+                    html.Label('Set size of rolling average window for cases (in weeks)',
                                style=create_div_style(fs=18)),
 
                     dcc.Markdown('''
@@ -117,7 +120,7 @@ tab1_layout = html.Div([
                         min=7,
                         max=21,
                         step=7,
-                        marks={i*7: str(i*7) for i in range(1, 4)},
+                        marks={i*7: f'{str(i)} weeks' for i in range(1, 4)},
                         value=7
                     )
                     ], style=create_div_style(mb=5))
@@ -125,7 +128,7 @@ tab1_layout = html.Div([
 
                 html.Div([
                     # label for slider
-                    html.Label('Set length of time to calculate avge daily growth rate over',
+                    html.Label('Set length of time to calculate average daily growth rate over',
                                style=create_div_style(fs=18)),
 
                     dcc.Markdown('''
@@ -174,8 +177,8 @@ tab1_layout = html.Div([
 
                     dcc.Markdown('''
                     Check all boxes you want to use as start and end of age group ranges.
-                    First range will start at 0 and last range will cover all older ages''',
-                                 style=create_div_style(fs=14)),
+                    Eg just choosing 40 will create 2 groups: 0-39 yrs and 40+ yrs''',
+                                 style=create_div_style(fs=14, w='95%')),
 
                     html.Div([
                         dcc.Checklist(
@@ -234,7 +237,7 @@ tab1_layout = html.Div([
                         id='table',
                         columns=[{"name": 'Hover here for case discussion', "id": 'col_1'},
                                  {"name": 'Hover here for growth rate discussion', 'id': 'col_2'}],
-                        style_cell={'textAlign': 'center'},
+                        style_cell={'textAlign': 'center', 'font_family': 'Arial'},
                         tooltip_header={'col_1': {'value': box1_1, 'type': 'markdown'},
                                         'col_2': {'value': box1_2, 'type': 'markdown'}},
                         tooltip_duration=None
@@ -255,8 +258,7 @@ tab2_layout = html.Div([
 
 
     dcc.Markdown("""
-    #### The first figure shows first and second dose vaccinations per 10,000 of population and the second shows the ratio of hospital admissions to recorded cases.
-    #### As well as varying the date range and rolling average length, you can vary the offset as described below.
+    #### Explore vaccination coverage vs hospital admission to case ratio. As well as varying the date range and rolling average length, you can vary the 'lag' as described below.
     """, style=create_div_style(borderb='black solid 1px')),
 
     # create div box for all options
@@ -304,18 +306,18 @@ tab2_layout = html.Div([
 
         html.Div([
             # label for slider
-            html.Label('Set time offset between comparators 1 and 2 (+7 means comparator 2 shifts 7 days later)',
-                       style=create_div_style(fs=18)),
+            html.Label('Set time lag between cases and admissions (7 means compare cases to admissions 7 days later)',
+                       style=create_div_style(fs=18, w='95%')),
 
             html.Div([
-            # slider for choosing offset between comparators 1 and 2
+            # slider for choosing lag between cases and admissions
             dcc.Slider(
                 id='offset_days',
-                min=-15,
-                max=0,
+                min=0,
+                max=15,
                 step=1,
-                marks={i: str(i) for i in range(-15, 1)},
-                value=-7
+                marks={i: str(i) for i in range(16)},
+                value=7
             )
             ], style=create_div_style(mb=20))
         ]),
@@ -347,7 +349,7 @@ tab2_layout = html.Div([
                 id='table',
                 columns=[{"name": 'Hover here for discussion', "id": 'col_1'},
                          {"name": 'Offset parameter', "id": 'col_2'}],
-                style_cell={'textAlign': 'center'},
+                style_cell={'textAlign': 'center', 'font_family': 'Arial'},
                 tooltip_header={'col_1': {'value': box2_1, 'type': 'markdown'},
                                 'col_2': {'value': box2_2, 'type': 'markdown'}},
                 tooltip_duration=None
@@ -370,8 +372,7 @@ tab3_layout = html.Div([
 
 
     dcc.Markdown("""
-    #### Various figures to visualise relationships between cases and hospital admissions at different time lags
-    #### As well as varying the date range and lag length, different age group combinations can be selected
+    #### Explore lag between cases and admissions.As well as varying the date range and lag length, different age group combinations can be selected
     """, style=create_div_style(borderb='black solid 1px')),
 
     # create div box for all options
@@ -462,7 +463,7 @@ tab3_layout = html.Div([
                 columns=[{"name": 'Hover for discussion on lag', "id": 'col_1'},
                          {"name": 'Emergence of Alpha variant', "id": 'col_2'},
                          {"name": 'Impact of vaccination', "id": 'col_3'}],
-                style_cell={'textAlign': 'center'},
+                style_cell={'textAlign': 'center', 'font_family': 'Arial'},
                 tooltip_header={'col_1': {'value': box3_1, 'type': 'markdown'},
                                 'col_2': {'value': box3_2, 'type': 'markdown'},
                                 'col_3': {'value': box3_3, 'type': 'markdown'}},
