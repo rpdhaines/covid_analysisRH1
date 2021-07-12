@@ -336,3 +336,25 @@ def get_df_per_pop(df, pop_df, per=10000):
     df_per_pop = df_per_pop * per
 
     return df_per_pop
+
+
+def get_rolling_total(df, start_date, end_date, rolling=1):
+    """
+    cut df to between start and end date, apply rolling average and then sum df cols
+    :param df: dataframe - datetime index and only columns you want to sum
+    :param start_date: datetime - start date to cut index by
+    :param end_date: datetime - end date to cut index by
+    :param rolling: int - rolling average window length
+    :return:
+    """
+    # cut to start and end date (assumes start date already datetime)
+    # assumes end date of dfs already matches
+    df = df.loc[start_date: end_date]
+
+    # create rolling avge dfs
+    df = df.rolling(rolling).mean()
+
+    # create sum column
+    df['total'] = df.sum(axis=1)
+
+    return pd.DataFrame(df['total'])

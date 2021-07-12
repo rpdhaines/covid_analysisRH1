@@ -1,7 +1,7 @@
 # container for helper functions to quickly set styles
 
-def create_div_style(mb=5, mt=5, ml=5, mr=5, fs=12, c='black', w='100%', display='block', va='top', float='left',
-                     borderb=None):
+def create_div_style(mb=3, mt=3, ml=5, mr=5, fs=12, c='black', w='100%', display='block', va='top', float='left',
+                     borderb=None, bordert=None, borderl=None, borderr=None, bc=None, gradient=None):
 
     style_dict = {'margin-bottom': f'{mb}px',
                   'margin-top': f'{mt}px',
@@ -13,12 +13,17 @@ def create_div_style(mb=5, mt=5, ml=5, mr=5, fs=12, c='black', w='100%', display
                   'display': display,
                   'verticalAlign': va,
                   'float': float,
-                  'border-bottom': borderb
+                  'border-bottom': borderb,
+                  'border-top': bordert,
+                  'border-left': borderl,
+                  'border-right': borderr,
+                  'background-color': bc,
+                  'background-image': gradient
                   }
 
     return style_dict
 
-def create_graph_layout(title, xtitle, ytitle, height=400,
+def create_graph_layout(title, xtitle, ytitle, height=350,
                         marginl=40, marginr=0, marginb=40, margint=30,
                         colour='white'):
     """
