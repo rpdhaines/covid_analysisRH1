@@ -1,6 +1,7 @@
 ### utility functions ###
 import numpy as np
 import pandas as pd
+from pandas.tseries.offsets import DateOffset
 
 
 def create_pop_age_gps():
@@ -15,6 +16,7 @@ def create_pop_age_gps():
 
     return population
 
+
 def get_pop_by_age(df, bin_list):
     bins, bin_labels = create_bins_labels(bin_list)
 
@@ -23,6 +25,7 @@ def get_pop_by_age(df, bin_list):
     df = df.groupby(by='age_group').sum().T
 
     return df
+
 
 def clean_case_data(df):
     df['date'] = pd.to_datetime(df['date'])
@@ -71,6 +74,7 @@ def get_case_age_gps(df):
 
     return df
 
+
 def prepare_case_data(df):
     # from utilities import clean_case_data, get_case_age_gps, create_pop_age_gps
 
@@ -86,6 +90,7 @@ def prepare_case_data(df):
     
     return cases_per_10k
 
+
 def clean_vax_data(df):
     df['date'] = pd.to_datetime(df['date'])
 
@@ -100,6 +105,7 @@ def clean_vax_data(df):
     df = df[cols_to_keep].copy()
 
     return df
+
 
 def set_vax_age_gps(df):
     # create separate first dose and second dose dataframes
@@ -154,6 +160,7 @@ def prepare_vax_data(df):
 
     return dose1_2
 
+
 def clean_admission_data(df):
     df['date'] = pd.to_datetime(df['date'])
 
@@ -166,6 +173,7 @@ def clean_admission_data(df):
 
     return df
 
+
 def admissions_cum_to_new(df):
     df = df.groupby(by=['date', 'age']).sum().unstack()
     df.columns = df.columns.droplevel()
@@ -173,6 +181,7 @@ def admissions_cum_to_new(df):
     df = df - df.shift(1)
 
     return df
+
 
 def set_admissions_age_gps(df):
     df['0-17 yrs'] = df['0_to_5'] + df['6_to_17']
@@ -200,6 +209,7 @@ def prepare_admissions_data(df):
 
     return admissions_per_10k
 
+
 def bin_ages(df, *args):
     # requires ages in multiples of less than 5, highest one 90 or less
     # add col with start age of age col
@@ -220,6 +230,7 @@ def bin_ages(df, *args):
 
     return df
 
+
 def create_bins_labels(bin_list):
     # ensure bin_list in order
     bin_list = np.array(bin_list)
@@ -236,6 +247,7 @@ def create_bins_labels(bin_list):
 
     return bins, bin_labels
 
+
 def bin_ages_from_list(df, bin_list):
     df['start_age'] = df['age'].apply(lambda x: int(x[:2]))
 
@@ -245,10 +257,11 @@ def bin_ages_from_list(df, bin_list):
 
     return df
 
+
 def equalise_end_dates(*args):
     """
     function to cut end date of set of datetime dfs to be the earliest last date within the set of dataframes passed
-    :param args: must all be dataframes with datetime indices
+    :param args: must all be dataframes with datetime indices with latest date at bottom
     :return: dataframes with equalised end-dates, wrapped in a list
     """
 
@@ -258,6 +271,7 @@ def equalise_end_dates(*args):
     df_list = [df.loc[:earliest_end_date] for df in args]
 
     return df_list
+
 
 def backfill_start(df, start_date):
     """
@@ -272,21 +286,22 @@ def backfill_start(df, start_date):
 
     return df
 
+
 def get_ratio(df1, df2, start_date, rolling=7):
 
-    # cut to start date (assumes start date already datetime)
-    # assumes end date of dfs already matches
-    df1 = df1.loc[start_date:]
-    df2 = df2.loc[start_date:]
-    
     # create rolling avge dfs
     df1 = df1.rolling(rolling).mean()
     df2 = df2.rolling(rolling).mean()
     
     # create ratio df
     ratio = df1 / df2
+
+    # cut to start date (assumes start date already datetime)
+    # assumes end date of dfs already matches
+    ratio = ratio.loc[start_date:]
     
     return ratio
+
 
 def get_region_pop(df, region, age_bins_list):
     """
@@ -323,6 +338,7 @@ def get_region_pop(df, region, age_bins_list):
 
     return region_pop
 
+
 def get_df_per_pop(df, pop_df, per=10000):
     """
     helper fn to turn df with pure numbers in numbers per x of population
@@ -340,16 +356,13 @@ def get_df_per_pop(df, pop_df, per=10000):
 
 def get_rolling_total(df, start_date, end_date, rolling=1):
     """
-    cut df to between start and end date, apply rolling average and then sum df cols
+    apply rolling average and then sum df cols, cut df to between start and end date
     :param df: dataframe - datetime index and only columns you want to sum
     :param start_date: datetime - start date to cut index by
     :param end_date: datetime - end date to cut index by
     :param rolling: int - rolling average window length
     :return:
     """
-    # cut to start and end date (assumes start date already datetime)
-    # assumes end date of dfs already matches
-    df = df.loc[start_date: end_date]
 
     # create rolling avge dfs
     df = df.rolling(rolling).mean()
@@ -357,4 +370,24 @@ def get_rolling_total(df, start_date, end_date, rolling=1):
     # create sum column
     df['total'] = df.sum(axis=1)
 
+    # cut to start and end date (assumes start date already datetime)
+    # assumes end date of dfs already matches
+    df = df.loc[start_date: end_date]
+
     return pd.DataFrame(df['total'])
+
+
+def get_month_starts(start_date, end_date):
+    """
+    get list of dates which will be the 1st of every month from the start-date month to end-date month
+    :param start_date: Datetime - date to start list with first of month
+    :param end_date: Datetime - date to end list with first of month
+    :return: list of first of months
+    """
+
+    start_date = start_date.replace(day=1)
+    end_date = end_date.replace(day=1)
+    num_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
+    dates = [start_date + DateOffset(months=x) for x in range(num_months+1)]
+
+    return dates

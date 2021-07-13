@@ -72,73 +72,11 @@ def render_content(tab):
     elif tab == 'tab-3':
         return tab3_layout
 
-# set callback to populate graph1
+
+# set callback to populate graphs 1_1 and 1_2
 @app.callback(
-    Output('cases_per_10,000_by_age_group', 'figure'),
-    [Input('Region', 'value'),
-     Input('start_date', 'value'),
-     Input('rolling_avge_length', 'value'),
-     Input('age_bins_list1', 'value'),
-     Input('age_bins_list2', 'value'),
-     Input('age_bins_list3', 'value'),
-     Input('age_bins_list4', 'value'),
-     Input('age_bins_list5', 'value')])
-def update_graph1_1(Region, start_date, rolling_avge_length, age_bins_list1,
-                  age_bins_list2, age_bins_list3, age_bins_list4, age_bins_list5):
-
-    fig1_1 = go.Figure()
-
-    df = cases_by_age_region.copy()
-
-    age_bins_list = age_bins_list1 + age_bins_list2 + age_bins_list3 + age_bins_list4 + age_bins_list5
-
-    ### aggregate age groups ###
-    df = bin_ages_from_list(df, age_bins_list)
-
-    # turn into required pivot
-    if Region == 'England':
-        df = df[national_groups_and_cases].groupby(by=national_groupings).sum().unstack()
-        df.columns = df.columns.droplevel()
-    else:
-        df = df[groups_and_cases].groupby(by=groupings).sum().unstack().unstack()
-        df.columns = df.columns.droplevel()
-
-    # filter by region
-    if Region == 'England':
-        pass
-    else:
-        df = df[Region].copy()
-
-    # filter to start-date
-    df = df[pd.to_datetime(dates[start_date]):]
-
-    df_rolling = df.rolling(rolling_avge_length).mean()
-
-    # create region population by age group
-    region_pop = pop_by_region.copy()
-    region_pop = get_region_pop(region_pop, Region, age_bins_list)
-
-    # turn df into per 10,000 population
-    df_rolling = get_df_per_pop(df_rolling, region_pop)
-
-    for col in df_rolling.columns:
-        fig1_1.add_trace(go.Scatter(
-            x=df_rolling.index,
-            y=df_rolling[col],
-            mode='lines',
-            name=col
-        )
-        )
-
-    fig1_1.update_layout(create_graph_layout(title=f'Daily cases per 10,000 population over time in {Region}',
-                                           xtitle='date',
-                                           ytitle='daily cases per 10,000 population'))
-
-    return fig1_1
-
-# set callback to populate graph1_2
-@app.callback(
-    Output('daily_growth_rate_by_age_group', 'figure'),
+    [Output('cases_per_10,000_by_age_group', 'figure'),
+     Output('daily_growth_rate_by_age_group', 'figure')],
     [Input('Region', 'value'),
      Input('start_date', 'value'),
      Input('rolling_avge_length', 'value'),
@@ -149,9 +87,10 @@ def update_graph1_1(Region, start_date, rolling_avge_length, age_bins_list1,
      Input('age_bins_list3', 'value'),
      Input('age_bins_list4', 'value'),
      Input('age_bins_list5', 'value')])
-def update_graph1_2(Region, start_date, rolling_avge_length, growth_rate_length, growth_rate_average_length,
+def update_graphs1(Region, start_date, rolling_avge_length, growth_rate_length, growth_rate_average_length,
                   age_bins_list1, age_bins_list2, age_bins_list3, age_bins_list4, age_bins_list5):
 
+    fig1_1 = go.Figure()
     fig1_2 = go.Figure()
 
     df = cases_by_age_region.copy()
@@ -174,13 +113,36 @@ def update_graph1_2(Region, start_date, rolling_avge_length, growth_rate_length,
     else:
         df = df[Region].copy()
 
-    # filter to start-date
-    df = df[pd.to_datetime(dates[start_date]):]
-
     df_rolling = df.rolling(rolling_avge_length).mean()
+
+
+    # create region population by age group
+    region_pop = pop_by_region.copy()
+    region_pop = get_region_pop(region_pop, Region, age_bins_list)
+
+    # turn df into per 10,000 population
+    df_per_pop = get_df_per_pop(df_rolling, region_pop)
 
     growth_rate = (df_rolling / df_rolling.shift(growth_rate_length)).apply(lambda x: x ** (1 / growth_rate_length) - 1)
     growth_rate = growth_rate.rolling(growth_rate_average_length, center=True).mean()
+
+    # filter to start date
+    df_per_pop = df_per_pop.loc[pd.to_datetime(dates[start_date]):]
+    growth_rate = growth_rate.loc[pd.to_datetime(dates[start_date]):]
+
+    for col in df_per_pop.columns:
+        fig1_1.add_trace(go.Scatter(
+            x=df_per_pop.index,
+            y=df_per_pop[col],
+            mode='lines',
+            name=col
+        )
+        )
+
+    fig1_1.update_layout(create_graph_layout(title=f'Daily cases per 10,000 population over time in {Region}',
+                                           xtitle='date',
+                                           ytitle='daily cases per 10,000 population'))
+
 
     for col in growth_rate.columns:
         fig1_2.add_trace(go.Scatter(
@@ -195,9 +157,9 @@ def update_graph1_2(Region, start_date, rolling_avge_length, growth_rate_length,
                                            xtitle='date',
                                            ytitle='smoothed growth rate'))
 
-    return fig1_2
+    return fig1_1, fig1_2
 
-# set callback to populate graph1
+# set callback to populate graph2_1
 @app.callback(
     Output('cumulative_vax_ppn', 'figure'),
     [Input('start_date', 'value'),

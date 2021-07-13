@@ -46,9 +46,11 @@ admissions_per_10k = df_list[2].copy()
 region_names = cases_by_age_region['areaName'].unique().tolist()
 region_names.append('England')
 
-# create list of date labels for starting date
-date1 = pd.to_datetime("2020-08-01")
-dates = [date1 + DateOffset(months=x) for x in range(12)]
+# create list of monthly date labels for starting date up to and including last available equalised dates
+start_date = pd.to_datetime("2020-08-01")
+end_date = cases_per_10k.index[-1]
+dates = get_month_starts(start_date, end_date)
+dates.append(end_date)
 
 # create lists to use to select columns in eventual dataframe
 groupings = ['date', 'age_group', 'areaName']
@@ -95,9 +97,9 @@ tab1_layout = html.Div([
                         dcc.Slider(
                             id='start_date',
                             min=0,
-                            max=11,
+                            max=len(dates)-1,
                             step=1,
-                            marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(6)},
+                            marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int((len(dates) / 2) + 1))},
                             value=3
                         )
                     ], style=create_div_style(mb=5))
@@ -278,9 +280,9 @@ tab2_layout = html.Div([
                 dcc.Slider(
                     id='start_date',
                     min=0,
-                    max=11,
+                    max=len(dates) - 1,
                     step=1,
-                    marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(6)},
+                    marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int((len(dates) / 2) + 1))},
                     value=3
                 )
             ], style=create_div_style(mb=20))
@@ -392,10 +394,10 @@ tab3_layout = html.Div([
                 dcc.RangeSlider(
                     id='date_range',
                     min=0,
-                    max=11,
+                    max=len(dates) - 1,
                     step=1,
-                    marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(6)},
-                    value=[3, 11]
+                    marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int((len(dates) / 2) + 1))},
+                    value=[3, len(dates)-1]
                 )
             ], style=create_div_style(mb=20))
         ]),
