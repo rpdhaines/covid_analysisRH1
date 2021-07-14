@@ -1,33 +1,44 @@
-### utility functions ###
+# utility functions used to do chunks of database manipulation. most functions are tailored
+# to the specifics of this app
+
 import numpy as np
 import pandas as pd
 from pandas.tseries.offsets import DateOffset
 
 
 def create_pop_age_gps():
+    """
+    function specifically for getting England population split by the age groups that hospital
+    admissions are provided in, from the 2019 population file which is housed in the root folder
+    :return: dataframe with a single row of population figures, columns are the age groups
+    """
+
+    # read in population file
     population = pd.read_csv('2019_England_pop.csv')
+
+    # tidy data
     population.replace(to_replace='90+', value=90, inplace=True)
     population['age'] = population['age'].astype('int64')
+
+    # create age-group columns for age groups in which the admissions data is provided
     bins = [0, 17, 64, 84, 90]
     bin_labels = ['0-17 yrs', '18-64 yrs', '65-84 yrs', '85+ yrs']
     population['age_group'] = pd.cut(population['age'], bins=bins, labels=bin_labels, include_lowest=True)
     population.drop(columns='age', axis=1, inplace=True)
+    # as the only cols left are age group and population, a simple groupby and transpose gives us the df in
+    # desired form
     population = population.groupby(by='age_group').sum().T
 
     return population
 
 
-def get_pop_by_age(df, bin_list):
-    bins, bin_labels = create_bins_labels(bin_list)
-
-    df['age_group'] = pd.cut(df['age'], bins=bins, labels=bin_labels, include_lowest=True)
-    df.drop(columns='age', axis=1, inplace=True)
-    df = df.groupby(by='age_group').sum().T
-
-    return df
-
-
 def clean_case_data(df):
+    """
+    takes loaded cases dataframe in expected format and tidies it to remove early dates and unwanted cols etc
+    :param df: DataFrame - expect in format of loaded cases data
+    :return:
+    """
+    # ensure date column is DateTime
     df['date'] = pd.to_datetime(df['date'])
 
     # filter to post July cases to avoid very low summer period
@@ -39,7 +50,6 @@ def clean_case_data(df):
                '40_44', '45_49', '50_54', '55_59',
                '60_64', '65_69', '70_74', '75_79',
                '80_84', '85_89', '90+']
-
     df = df[df['age'].isin(age_gps)]
 
     # filter to columns to be kept
@@ -50,6 +60,12 @@ def clean_case_data(df):
 
 
 def get_case_age_gps(df):
+    """
+    takes tidied case datframe and returns one with columns for age groups
+    :param df: Dataframe - expects tidied case df
+    :return: Dataframe - rows are dates, columns are cases by age group (hospital admissions groupings)
+    """
+    # 'areaName' col can be dropped for this purpose
     df.drop('areaName', axis=1, inplace=True)
 
     # create df pivot by age
@@ -64,6 +80,7 @@ def get_case_age_gps(df):
     cols_2064 = [f'{5 * i}_{5 * (i + 1) - 1}' for i in range(4, 13)]
     cols_6584 = [f'{5 * i}_{5 * (i + 1) - 1}' for i in range(13, 17)]
     cols_85plus = ['85_89', '90+']
+    # approximate split of the 15-19 age group given in the case date to 15-17 an 18-19
     df['0-17 yrs'] = df[cols_0014].sum(axis=1) + 0.6 * df['15_19']
     df['18-64 yrs'] = 0.4 * df['15_19'] + df[cols_2064].sum(axis=1)
     df['65-84 yrs'] = df[cols_6584].sum(axis=1)
@@ -76,22 +93,34 @@ def get_case_age_gps(df):
 
 
 def prepare_case_data(df):
-    # from utilities import clean_case_data, get_case_age_gps, create_pop_age_gps
+    """
+    wrapper function to wrangle population and case data to required format and create a 'cases per 10k' file
+    :param df: Dataframe - expected in the form of the England cases data file on .gov website
+    :return: Dataframe - rows are dates and cols are age groups. data is cases per 10k of population
+    """
 
+    # clean case data and put into age groups
     cases_per_10k = clean_case_data(df)
     cases_per_10k = get_case_age_gps(cases_per_10k)
 
+    # put population data into age groups
     population = create_pop_age_gps()
     
-    # multiply every row in cases df by the population multipliers by applying .mul to population turned into a series
+    # multiply every row in cases df by the population multipliers by applying .mul to population
+    # turned into a series, and multiply up by 10,000
     cases_per_10k = cases_per_10k.div(population.iloc[0], axis='columns')
-
     cases_per_10k = cases_per_10k * 10000
     
     return cases_per_10k
 
 
 def clean_vax_data(df):
+    """
+    apply some tidy to raw loaded vaccinations dataframe
+    :param df: DataFrame - expected in form of vaccinations data downloaded from .gov website
+    :return: DataFrame - rows are dates, only necessary columns kept
+    """
+    # ensure dates are DateTime
     df['date'] = pd.to_datetime(df['date'])
 
     # filter to post July cases to avoid very low summer period
@@ -108,6 +137,12 @@ def clean_vax_data(df):
 
 
 def set_vax_age_gps(df):
+    """
+    create vaccinations data by (hospital admissions) age_groups
+    :param df: DataFrame - expects cleaned vaccinations data
+    :return: 2 DataFrames - rows are dates, columns are age_groups for dose 1 cumulative vaccinated
+    and dose 2 cumulative vaccinated
+    """
     # create separate first dose and second dose dataframes
     first_dose = df.drop('cumPeopleVaccinatedSecondDoseByVaccinationDate', axis=1)
     second_dose = df.drop('cumPeopleVaccinatedFirstDoseByVaccinationDate', axis=1)
@@ -144,9 +179,17 @@ def set_vax_age_gps(df):
 
 
 def prepare_vax_data(df):
+    """
+    wrapper function to create cumulative vaccinations per 10k of population
+    :param df: DataFrame - expected in form of vaccinations data downloaded from .gov website
+    :return: Dataframe - rows are data and columns are dose1 age groups and dose2 age groups. data
+    is cumulative vaccinations per 10K of population
+    """
+    # create vax data by age groups
     vax_data = clean_vax_data(df)
     dose1, dose2 = set_vax_age_gps(vax_data)
-    
+
+    # create population by age group
     population = create_pop_age_gps()
 
     # multiply every row in vax df by the population multipliers by applying .mul to population turned into a series
@@ -162,6 +205,12 @@ def prepare_vax_data(df):
 
 
 def clean_admission_data(df):
+    """
+    apply some tidy to raw loaded hospital admissions dataframe
+    :param df: DataFrame - expected in form of admissions data downloaded from .gov website
+    :return: DataFrame - rows are dates, only necessary columns kept
+    """
+    # ensure date is DateTime
     df['date'] = pd.to_datetime(df['date'])
 
     # filter to post July cases to avoid very low summer period
@@ -175,16 +224,31 @@ def clean_admission_data(df):
 
 
 def admissions_cum_to_new(df):
+    """
+    admissions data only comes as cumulative. this function converts this to new admissions each day
+    :param df: DataFrame - expects cleaned admissions data
+    :return:
+    """
+    # create column of cumulative admissions by age
     df = df.groupby(by=['date', 'age']).sum().unstack()
     df.columns = df.columns.droplevel()
 
+    # calculate new admissions as cumulative admissions today less cumulative admissions yesterday
     df = df - df.shift(1)
 
     return df
 
 
 def set_admissions_age_gps(df):
+    """
+    create admissions data by age_groups
+    :param df: DataFrame - expects cleaned 'daily new admissions' data
+    :return: DataFrames - rows are dates, columns are age_groups
+    """
+    # admissions already essentially in the right age groups - just need to combine the 2 youngest age groups
     df['0-17 yrs'] = df['0_to_5'] + df['6_to_17']
+
+    # rename columns for consistency and drop unnecessary ones
     col_name_map = {'18_to_64' : '18-64 yrs',
                     '65_to_84' : '65-84 yrs',
                     '85+' : '85+ yrs'}
@@ -196,13 +260,23 @@ def set_admissions_age_gps(df):
 
 
 def prepare_admissions_data(df):
+    """
+    wrapper function to create new hospital admissions per 10k of population
+    :param df: DataFrame - expected in form of hospital admissions data downloaded from .gov website
+    :return: Dataframe - rows are data and columns are age groups. data is hospital admissions
+    per 10K of population
+    """
+
+    # use helper functions to clean data and put into age groups
     admissions_per_10k = clean_admission_data(df)
     admissions_per_10k = admissions_cum_to_new(admissions_per_10k)
     admissions_per_10k = set_admissions_age_gps(admissions_per_10k)
 
+    # create population by age group
     population = create_pop_age_gps()
 
-    # multiply every row in cases df by the population multipliers by applying .mul to population turned into a series
+    # multiply every row in cases df by the population multipliers by applying .mul to population
+    # turned into a series
     admissions_per_10k = admissions_per_10k.div(population.iloc[0], axis='columns')
 
     admissions_per_10k = admissions_per_10k * 10000
@@ -210,28 +284,13 @@ def prepare_admissions_data(df):
     return admissions_per_10k
 
 
-def bin_ages(df, *args):
-    # requires ages in multiples of less than 5, highest one 90 or less
-    # add col with start age of age col
-    df['start_age'] = df['age'].apply(lambda x: int(x[:2]))
-
-    # convert tuple into array and order
-    bins = np.asarray(args)
-    bins = np.sort(bins)
-
-    # create array including 0 and order
-    bins_with_0 = np.append(bins, 0)
-    bins_with_0_120 = np.append(bins_with_0, 120)
-    bins_with_0_120 = np.sort(bins_with_0_120)
-
-    bin_labels = [str(bins_with_0_120[x]) + "-" + str(bins_with_0_120[x + 1] - 1) + " yrs" for x in range(len(bins_with_0_120) - 2)]
-    bin_labels.append(f'{bins_with_0_120[-2]}+ yrs')
-    df['age_group'] = pd.cut(x=df['start_age'], bins=bins_with_0_120.tolist(), right=False, labels=bin_labels)
-
-    return df
-
-
 def create_bins_labels(bin_list):
+    """
+    helper function to create list of age group labels for given set of bin edges
+    :param bin_list: List - bin edges. Assumes excludes 0, and maximum is below 120
+    :return: 2 Lists - the first being the full list of bin edges including 0 and 120, and
+    the second being age group labels in the form 'x-y yrs'
+    """
     # ensure bin_list in order
     bin_list = np.array(bin_list)
     bin_list = np.sort(bin_list).tolist()
@@ -242,6 +301,7 @@ def create_bins_labels(bin_list):
         bins.append(bin_list[i])
     bins.append(120)
 
+    # create list of bin labels
     bin_labels = [str(bins[x]) + "-" + str(bins[x + 1] - 1) + " yrs" for x in range(len(bins) - 2)]
     bin_labels.append(f'{bins[-2]}+ yrs')
 
@@ -249,10 +309,19 @@ def create_bins_labels(bin_list):
 
 
 def bin_ages_from_list(df, bin_list):
+    """
+    helper function to create age group columns in a dataframe for given age group edges
+    :param df: DataFrame - expects cleaned cases by age and region dataframe
+    :param bin_list: List - age group edges - expected to exclude 0 and maximum age to be below 120
+    :return: DataFrame - original df with extra columns for 'start age' of the age group and a column with the
+    age group label
+    """
+    # expecting age labels to be in a form where the first 2 characters are the starting age for that band
+    # eg 05to10.
     df['start_age'] = df['age'].apply(lambda x: int(x[:2]))
 
+    # create full bin list and labels, and create age_group column using pd.cut
     bins, bin_labels = create_bins_labels(bin_list)
-
     df['age_group'] = pd.cut(x=df['start_age'], bins=bins, right=False, labels=bin_labels)
 
     return df
@@ -265,9 +334,13 @@ def equalise_end_dates(*args):
     :return: dataframes with equalised end-dates, wrapped in a list
     """
 
+    # get list of all end dates in indices of passed dataframes
     end_dates = [df.index[-1] for df in args]
+
+    # find the earliest end date
     earliest_end_date = min(end_dates)
 
+    # create list of dataframes all sliced to finish at earliest end date
     df_list = [df.loc[:earliest_end_date] for df in args]
 
     return df_list
@@ -288,6 +361,17 @@ def backfill_start(df, start_date):
 
 
 def get_ratio(df1, df2, start_date, rolling=7):
+    """
+    takes ratio of 2 dataframes with identical shape and column order, after first taking a rolling average,
+    and then slices to begin at start_date
+    :param df1: DataFrame - with same columns in same order as df2
+    :param df2: DataFrame - with same columns in same order as df1
+    :param start_date: DateTime - needs to be later than the start date of the dfs, which is currently set to
+    1 August 2020
+    :param rolling: Int - length of window for rolling average
+    :return: DataFrame - same columns as df1 and df2, with values being ratio of the rolling avges, sliced to
+    begin at passed start_date
+    """
 
     # create rolling avge dfs
     df1 = df1.rolling(rolling).mean()
@@ -311,13 +395,16 @@ def get_region_pop(df, region, age_bins_list):
     :param age_bins_list: list of integer age group dividers - expected to be in the form from the age_group checklist
     :return: df with single row for required region, and a column for eag required age group, containing population
     """
+    # allow for special case of region being England, requiring a sum of all regions, else just slice to region
     if region == 'England':
         region_pop = pd.DataFrame(df.sum(axis=0)).T
     else:
         region_pop = df[df['Name'] == region].copy()
 
-
+    # new cols will be created which will be the ones to keep, after which the starting columns can all be dropped
     cols_to_drop = region_pop.copy().columns
+
+    # create bins and bin labels for age groups
     bins, bin_labels = create_bins_labels(age_bins_list)
 
     # create new columns with population for age groups
@@ -333,6 +420,7 @@ def get_region_pop(df, region, age_bins_list):
         sum_cols.append('90+')
         region_pop[bin_labels[-1]] = region_pop[sum_cols].sum(axis=1)
 
+    # turn region name column into index. don't drop as it is in the list of cols to drop in the next step
     region_pop.set_index('Name', drop=False, inplace=True)
     region_pop.drop(columns=cols_to_drop, axis=1, inplace=True)
 
@@ -365,7 +453,7 @@ def get_rolling_total(df, start_date, end_date, rolling=1):
     """
 
     # create rolling avge dfs
-    df = df.rolling(rolling).mean()
+    df = pd.DataFrame(df.rolling(rolling).mean())
 
     # create sum column
     df['total'] = df.sum(axis=1)
@@ -385,9 +473,14 @@ def get_month_starts(start_date, end_date):
     :return: list of first of months
     """
 
+    # change start and end date to be first of the month
     start_date = start_date.replace(day=1)
     end_date = end_date.replace(day=1)
+
+    # count number of months between start and end
     num_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
+
+    # create a list of dates all being 1st of month, ending with the 1st of the month of end-date
     dates = [start_date + DateOffset(months=x) for x in range(num_months+1)]
 
     return dates

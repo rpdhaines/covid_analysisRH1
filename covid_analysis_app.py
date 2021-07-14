@@ -1,17 +1,11 @@
-### covid analysis app ###
+# covid analysis app
 
 # make necessary imports
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
 from dash.dependencies import Input, Output
 
 import plotly.graph_objects as go
-import pandas as pd
 import datetime
-from pandas.tseries.offsets import DateOffset
 from style_creator import create_div_style, create_graph_layout
-from utilities import *
 from app_tab_layouts import *
 
 # create app
@@ -47,15 +41,7 @@ app.layout = html.Div([
     ]),
 
     html.Div([
-    dcc.Markdown('''
-    This app is provided 'as is' without warranty of any kind. No reliance can be placed on the contents of this app. The data used is public data from:  
-    The gov.uk coronavirus dashboard [https://coronavirus.data.gov.uk/]  
-    The data accessed from the coronavirus dashboard is cases by specimen date, available as a csv download from
-     [https://api.coronavirus.data.gov.uk/v2/data?areaType=region&metric=newCasesBySpecimenDateAgeDemographics&format=csv]  
-    The ONS 2019 population estimates available from [https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatesforukenglandandwalesscotlandandnorthernireland]  
-    The code for this app can be found on GitHub: [https://github.com/rpdhaines/covid_analysisRH1]  
-    Questions? Contact me on rpdhaines2@yahoo.co.uk 
-    ''')
+    dcc.Markdown(main_info)
     ], style=create_div_style(fs=16))
 ])
 
@@ -170,7 +156,7 @@ def update_graph2_1(start_date, age_gps):
 
     df = vax_per_10k.copy()
 
-    # convet start_date to datetime and pad df to start_date
+    # convert start_date to datetime and pad df to start_date
     start_date = pd.to_datetime(dates[start_date])
     df = backfill_start(df, start_date)
 
@@ -243,8 +229,9 @@ def update_graph2_2(start_date, rolling_avge_length, offset_days, age_gps):
     [Input('date_range', 'value'),
      Input('rolling_avge_length', 'value'),
      Input('admission_lag', 'value'),
-     Input('age_gps', 'value')])
-def update_graphs3(date_range, rolling_avge_length, admission_lag, age_gps):
+     Input('age_gps', 'value'),
+     Input('scatter_colour', 'value')])
+def update_graphs3(date_range, rolling_avge_length, admission_lag, age_gps, scatter_colour):
 
     # get dfs filtered to just chose age_gps
     df1 = admissions_per_10k[age_gps].copy()
@@ -259,17 +246,20 @@ def update_graphs3(date_range, rolling_avge_length, admission_lag, age_gps):
     final_admissions = get_rolling_total(df1, start_date=start_date, end_date=end_date, rolling=rolling_avge_length)
     final_cases = get_rolling_total(df2, start_date=start_date, end_date=end_date, rolling=rolling_avge_length)
 
+    # create vaccinated per population for given age group
+    vax = vax_per_10k.copy()
+
+    # convert start_date to datetime and pad df to start_date
+    vax = backfill_start(vax, start_date)
+    vax = vax.loc[:end_date]
+    dose1_col = f'{age_gps} dose1'
+    dose2_col = f'{age_gps} dose2'
+
     graph_data = pd.DataFrame(data={'date': final_cases.index,
                                     'cases': final_cases['total'],
-                                    'admissions': final_admissions['total']})
-
-    # really convoluted way to create a list of dates (as strings) to use as colorbar tick labels
-    min_date = graph_data['date'].min()
-    graph_data['days'] = graph_data['date'].apply(lambda x: (x - min_date).days)
-    max_days = graph_data['days'].max()
-    fig1ticks = np.arange(0, (int(max_days / 28) + 1) * 28, 28)
-    fig1datetimes = [min_date + datetime.timedelta(days=i) for i in fig1ticks.tolist()]
-    fig1text = [i.strftime("%d-%b-%Y") for i in fig1datetimes]
+                                    'admissions': final_admissions['total'],
+                                    'dose1': vax[dose1_col],
+                                    'dose2': vax[dose2_col]})
 
     # add a ratio column
     graph_data['ratio'] = graph_data['admissions'] / graph_data['cases']
@@ -281,6 +271,36 @@ def update_graphs3(date_range, rolling_avge_length, admission_lag, age_gps):
     # cut off the last 'lag' days to avoid NANs at end
     graph_data = graph_data.iloc[:-admission_lag]
 
+    # really convoluted way to create a list of dates (as strings) to use as colorbar tick labels
+    min_date = graph_data['date'].min()
+    graph_data['days'] = graph_data['date'].apply(lambda x: (x - min_date).days)
+    max_days = graph_data['days'].max()
+    fig1_date_ticks = np.arange(0, (int(max_days / 28) + 1) * 28, 28)
+    fig1datetimes = [min_date + datetime.timedelta(days=i) for i in fig1_date_ticks.tolist()]
+    fig1_date_text = [i.strftime("%d-%b-%Y") for i in fig1datetimes]
+
+    # variables to determine colorscale for scatter
+    if scatter_colour == 'date':
+        colour_col = 'days'
+    else:
+        colour_col = scatter_colour
+
+    if scatter_colour == 'date':
+        colorbar_title = 'date'
+    else:
+        colorbar_title = f'{scatter_colour} per 10k'
+
+    if scatter_colour == 'date':
+        fig1ticks = fig1_date_ticks
+        fig1text = fig1_date_text
+        min_colour = graph_data['days'].iloc[0]
+        max_colour =  graph_data['days'].iloc[-1]
+    else:
+        fig1ticks = [1000 * i for i in range(11)]
+        fig1text = [str(1000 * i) for i in range(11)]
+        min_colour = 0
+        max_colour = 10000
+
     fig3_1 = go.Figure()
 
     fig3_1.add_trace(go.Scatter(
@@ -291,8 +311,10 @@ def update_graphs3(date_range, rolling_avge_length, admission_lag, age_gps):
             'size': 8,
             'opacity': 0.95,
             'line': {'width': 0.5, 'color': 'white'},
-            'color': graph_data['days'],
-            'colorbar': {'title': 'Date',
+            'color': graph_data[colour_col],
+            'cmin': min_colour,
+            'cmax': max_colour,
+            'colorbar': {'title': colorbar_title,
                          'tickvals': fig1ticks,
                          'ticktext': fig1text,
                          },

@@ -1,5 +1,18 @@
-# info box file containing the markdown strings for the hover info boxes
+# File containing the markdown strings for all substantive text in the app
 
+# information text at bottom of all pages
+main_info = '''
+    This app is provided 'as is' without warranty of any kind. No reliance can be placed on the contents of this app. The data used is public data from:  
+    The gov.uk coronavirus dashboard [https://coronavirus.data.gov.uk/]  
+    The data accessed from the coronavirus dashboard is cases by specimen date, available as a csv download from
+     [https://api.coronavirus.data.gov.uk/v2/data?areaType=region&metric=newCasesBySpecimenDateAgeDemographics&format=csv]  
+    The ONS 2019 population estimates available from [https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatesforukenglandandwalesscotlandandnorthernireland]  
+    The code for this app can be found on GitHub: [https://github.com/rpdhaines/covid_analysisRH1]  
+    Questions? Contact me on rpdhaines2@yahoo.co.uk 
+    '''
+
+
+# text for Information tab
 tab0_info = """
 ### This dashboard has been created in Plotly Dash by Richard Haines.  
 Last updated: July 2021  
@@ -16,6 +29,7 @@ be filtered by age groups, regions and time period. And there are a few other pa
 Explore the tabs and see what you can discover. Have fun!  
 """
 
+# tab for info box 1 on 'case analysis by age and region' tab
 box1_1 = """
 Prior to vaccinations case numbers had been consistently highest in young adults, lower at older ages and lowest
 in children, but with the shapes of the peaks being similar.  
@@ -24,6 +38,7 @@ in age groups being vaccinated later.
 Cases are now beginning to creep up in age groups with high levels of vaccinations as well.
 """
 
+# tab for info box 2 on 'case analysis by age and region' tab
 box1_2 = """
 In previous waves (Nov and Jan) growth rates across age groups have followed each other pretty closely,
 except for some additional noise amongst children connected to school openings and closures.  
@@ -34,6 +49,7 @@ growth rates at older ages, which is consistent with higher vaccination rates at
 Growth rates are now positive in all age groups but case levels in older age groups remain much lower.
 """
 
+# tab for info box 1 on 'Impact of vaccinations on hospital admissions' tab
 box2_1 = """
 Hospital admissions data in only available in the age groupings given here, which limits the flexibility of the analysis.  
 
@@ -42,23 +58,27 @@ it's possible to see the admissions ratio drop as vaccination levels increase, b
 perhaps too early to see a definitive trend in the 18-64 yrs age group.  
 """
 
+# tab for info box 2 on 'Impact of vaccinations on hospital admissions' tab
 box2_2 = """
 Admissions generally occur later than cases identified by positive tests. The offset parameter makes an approximate
 allowance for this to try to ensure the ratio is not affected by whether case levels are growing or shrinking.
 """
 
+# tab for info box 1 on 'Analysis of case to admission lag' tab
 box3_1 = """
 You've picked a good lag approximation if the scatter dots remain on the same line when cases are both growing and 
 shrinking (most easily referenced by the case peak in early Jan). This varies slightly for different age groups - 
 perhaps cases that eventually become severe do so more quickly on average in older age groups. 
 """
 
+# tab for info box 2 on 'Analysis of case to admission lag' tab
 box3_2 = """
 The odd pattern in the scatter graph in November is at the same time as the rapid rise to dominance of the Alpha 
 variant. The pattern is consistent with research suggesting the Alpha variant leads to higher rates of hospitalisation.  
 The scatter points adjust to a new straight line relationship during the November ris of Alpha in England.
 """
 
+# tab for info box 3 on 'Analysis of case to admission lag' tab
 box3_3 = """
 The impact of vaccinations can also be clearly seen in particular in the 65-84 age group if you move the date range 
 selector to, say, April to present. The recent increase in case numbers has been accompanied by a much slower 

@@ -440,10 +440,10 @@ tab3_layout = html.Div([
 
         html.Div([
             # label for checklist
-            html.Label('Choose age groups',
+            html.Label('Choose age group',
                        style=create_div_style(fs=18)),
 
-            dcc.Checklist(
+            dcc.RadioItems(
                 id='age_gps',
                 options=[
                     {'label': '0-17 yrs', 'value': '0-17 yrs'},
@@ -451,9 +451,26 @@ tab3_layout = html.Div([
                     {'label': '65-84 yrs', 'value': '65-84 yrs'},
                     {'label': '85+ yrs', 'value': '85+ yrs'}
                 ],
-                value=['65-84 yrs']),
+                value='65-84 yrs'),
+
+        ], style=create_div_style(mb=20)),
+
+        html.Div([
+            # label for checklist
+            html.Label('Choose scatter colour-scale',
+                       style=create_div_style(fs=18)),
+
+            dcc.RadioItems(
+                id='scatter_colour',
+                options=[
+                    {'label': 'date', 'value': 'date'},
+                    {'label': 'dose 1 coverage', 'value': 'dose1'},
+                    {'label': 'dose 2 coverage', 'value': 'dose2'}
+                ],
+                value='date'),
 
         ], style=create_div_style(mb=20))
+
     ], style=create_div_style(w='32%')),
 
     # create div box for graphs and info boxes
