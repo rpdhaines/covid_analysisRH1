@@ -1,6 +1,7 @@
 # covid analysis app - run file with callbacks
 
 # make necessary imports
+import dash
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 import datetime
