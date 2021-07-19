@@ -1,8 +1,7 @@
-# covid analysis app
+# covid analysis app - run file with callbacks
 
 # make necessary imports
 from dash.dependencies import Input, Output
-
 import plotly.graph_objects as go
 import datetime
 from style_creator import create_div_style, create_graph_layout
@@ -82,7 +81,7 @@ def update_graphs1(Region, start_date, rolling_avge_length, growth_rate_length, 
     df = cases_by_age_region.copy()
     age_bins_list = age_bins_list1 + age_bins_list2 + age_bins_list3 + age_bins_list4 + age_bins_list5
 
-    ### aggregate age groups ###
+    # aggregate age groups
     df = bin_ages_from_list(df, age_bins_list)
 
     # turn into required pivot
@@ -109,6 +108,7 @@ def update_graphs1(Region, start_date, rolling_avge_length, growth_rate_length, 
     # turn df into per 10,000 population
     df_per_pop = get_df_per_pop(df_rolling, region_pop)
 
+    # calculate growth rates
     growth_rate = (df_rolling / df_rolling.shift(growth_rate_length)).apply(lambda x: x ** (1 / growth_rate_length) - 1)
     growth_rate = growth_rate.rolling(growth_rate_average_length, center=True).mean()
 
@@ -116,6 +116,7 @@ def update_graphs1(Region, start_date, rolling_avge_length, growth_rate_length, 
     df_per_pop = df_per_pop.loc[pd.to_datetime(dates[start_date]):]
     growth_rate = growth_rate.loc[pd.to_datetime(dates[start_date]):]
 
+    # create traces for fig 1_1
     for col in df_per_pop.columns:
         fig1_1.add_trace(go.Scatter(
             x=df_per_pop.index,
@@ -125,11 +126,13 @@ def update_graphs1(Region, start_date, rolling_avge_length, growth_rate_length, 
         )
         )
 
+    # set fig1_1 layout
     fig1_1.update_layout(create_graph_layout(title=f'Daily cases per 10,000 population over time in {Region}',
                                            xtitle='date',
                                            ytitle='daily cases per 10,000 population'))
 
 
+    # create traces for fig1_2
     for col in growth_rate.columns:
         fig1_2.add_trace(go.Scatter(
             x=growth_rate.index,
@@ -139,6 +142,7 @@ def update_graphs1(Region, start_date, rolling_avge_length, growth_rate_length, 
         )
         )
 
+    # set layout for fig1_2
     fig1_2.update_layout(create_graph_layout(title=f'Smoothed daily growth rate by age over time in {Region}',
                                            xtitle='date',
                                            ytitle='smoothed growth rate'))
@@ -160,6 +164,7 @@ def update_graph2_1(start_date, age_gps):
     start_date = pd.to_datetime(dates[start_date])
     df = backfill_start(df, start_date)
 
+    # create col names and traces for fig2_1
     for col in age_gps:
         col1 = col + ' dose1'
         col2 = col + ' dose2'
@@ -179,13 +184,14 @@ def update_graph2_1(start_date, age_gps):
         )
         )
 
+    # update layout for fig2_1
     fig2_1.update_layout(create_graph_layout(title='Cumulative vaccinations dose 1 and dose 2',
                                            xtitle='date',
                                            ytitle='Vaccinate per 10,000'))
 
     return fig2_1
 
-# set callback to populate graph2
+# set callback to populate fig2_2
 @app.callback(
     Output('compare_ratio', 'figure'),
     [Input('start_date', 'value'),
@@ -196,9 +202,11 @@ def update_graph2_2(start_date, rolling_avge_length, offset_days, age_gps):
 
     fig2_2 = go.Figure()
 
+    # bring in admissions and cases date
     df1 = admissions_per_10k.copy()
     df2 = cases_per_10k.copy()
 
+    # shift admissions data by lag
     df1 = df1.shift(-offset_days)
 
     # turn start_date to datetime
@@ -206,6 +214,7 @@ def update_graph2_2(start_date, rolling_avge_length, offset_days, age_gps):
 
     df = get_ratio(df1, df2, start_date, rolling_avge_length)
 
+    # create traces for fig2_2
     for col in age_gps:
         fig2_2.add_trace(go.Scatter(
             x=df.index,
@@ -215,13 +224,14 @@ def update_graph2_2(start_date, rolling_avge_length, offset_days, age_gps):
         )
         )
 
+    # set layout for fig2_2
     fig2_2.update_layout(create_graph_layout(title='Admissions to cases ratio',
                                            xtitle='Date',
                                            ytitle='Admissions to cases ratio'))
 
     return fig2_2
 
-# set callback to populate graph3_1
+# set callback to populate fig3_1 to fig3_3
 @app.callback(
     [Output('admission-vs-case-scatter', 'figure'),
      Output('admission-case-ratio', 'figure'),
@@ -237,6 +247,7 @@ def update_graphs3(date_range, rolling_avge_length, admission_lag, age_gps, scat
     df1 = admissions_per_10k[age_gps].copy()
     df2 = cases_per_10k[age_gps].copy()
 
+    # shift admissions by chosen lag
     df1 = df1.shift(-admission_lag)
 
     # turn start_date and end_date to datetime
@@ -255,6 +266,7 @@ def update_graphs3(date_range, rolling_avge_length, admission_lag, age_gps, scat
     dose1_col = f'{age_gps} dose1'
     dose2_col = f'{age_gps} dose2'
 
+    # bring together all data for graphs
     graph_data = pd.DataFrame(data={'date': final_cases.index,
                                     'cases': final_cases['total'],
                                     'admissions': final_admissions['total'],
@@ -301,6 +313,7 @@ def update_graphs3(date_range, rolling_avge_length, admission_lag, age_gps, scat
         min_colour = 0
         max_colour = 10000
 
+    # create traces and layouts for fig3_1 to fig3_3
     fig3_1 = go.Figure()
 
     fig3_1.add_trace(go.Scatter(

@@ -1,13 +1,10 @@
 # contains children layouts for tabs in main app file
 
 # make necessary imports
-import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
 from style_creator import create_div_style
-import pandas as pd
-from pandas.tseries.offsets import DateOffset
 from utilities import *
 from info_boxes import *
 
@@ -59,10 +56,12 @@ groups_and_cases = ['date', 'age_group', 'areaName', 'cases']
 national_groupings = ['date', 'age_group']
 national_groups_and_cases = ['date', 'age_group', 'cases']
 
+# create layout for tab 0
 tab0_layout = html.Div([
     dcc.Markdown(tab0_info)
 ], style=create_div_style(fs=16, ml=8, borderb='black solid 1px', bordert='black solid 1px'))
 
+# create layout for tab 1
 tab1_layout = html.Div([
 
             dcc.Markdown("""
@@ -256,6 +255,7 @@ tab1_layout = html.Div([
             ], style=create_div_style(w='66%')),
         ])
 
+# layout for tab 2
 tab2_layout = html.Div([
 
 
@@ -370,6 +370,7 @@ tab2_layout = html.Div([
     ], style=create_div_style(w='66%', borderl='black solid 1px'))
 ])
 
+# layout for tab 3
 tab3_layout = html.Div([
 
 
