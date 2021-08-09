@@ -99,7 +99,7 @@ tab1_layout = html.Div([
                             min=0,
                             max=len(dates)-1,
                             step=1,
-                            marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int((len(dates) / 2) + 1))},
+                            marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int(((len(dates)+1) / 2)))},
                             value=3
                         )
                     ], style=create_div_style(mb=5))
@@ -283,7 +283,7 @@ tab2_layout = html.Div([
                     min=0,
                     max=len(dates) - 1,
                     step=1,
-                    marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int((len(dates) / 2) + 1))},
+                    marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int(((len(dates)+1) / 2)))},
                     value=3
                 )
             ], style=create_div_style(mb=20))
@@ -398,7 +398,7 @@ tab3_layout = html.Div([
                     min=0,
                     max=len(dates) - 1,
                     step=1,
-                    marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int((len(dates) / 2) + 1))},
+                    marks={2*i: dates[2*i].strftime('%Y-%m-%d') for i in range(int(((len(dates)+1) / 2)))},
                     value=[3, len(dates)-1]
                 )
             ], style=create_div_style(mb=20))
